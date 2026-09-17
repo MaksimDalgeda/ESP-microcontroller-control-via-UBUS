@@ -9,6 +9,8 @@ typedef enum
     ERR_UBUS_INVOKE,
     ERR_UBUS_NOT_INITIALIZED
 
-} ;
+} Error;
+
+const char *error_to_string(Error err);
 
 #endif
