@@ -4,6 +4,8 @@
 #include <libubus.h>
 #include <syslog.h>
 
+#include "error.h"
+
 typedef struct
 {
     struct ubus_context *ctx;
@@ -15,8 +17,8 @@ typedef struct
 } Ubus_State; 
 
 
-Error_Code initialize_ubus(void);
-Error_Code disconnect_ubus(void);
+ESP_Error initialize_ubus(void);
+ESP_Error disconnect_ubus(void);
 
 
 #endif

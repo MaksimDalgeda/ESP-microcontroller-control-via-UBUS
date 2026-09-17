@@ -4,7 +4,7 @@
 
 static Ubus_State g_ubus;
 
-Error_Code initialize_ubus(void){
+ESP_Error initialize_ubus(void){
 
     g_ubus.ctx = ubus_connect(NULL);
 
@@ -14,7 +14,7 @@ Error_Code initialize_ubus(void){
     return OK;
 }
 
-Error_Code disconnect_ubus(void){
+ESP_Error disconnect_ubus(void){
 
     if (g_ubus.ctx != NULL){
         ubus_free(g_ubus.ctx);
