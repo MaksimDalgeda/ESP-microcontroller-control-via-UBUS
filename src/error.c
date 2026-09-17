@@ -1,6 +1,6 @@
 #include "error.h"
 
-const char *error_to_string(Error err)
+const char *error_to_string(ESP_Error err)
 {
     switch (err)
     {
