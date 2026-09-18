@@ -5,9 +5,12 @@ typedef enum
 {
     OK,
     ERROR,
+    ERR_NULL_POINTER,
     ERR_UBUS_CONNECT,
     ERR_UBUS_INVOKE,
-    ERR_UBUS_NOT_INITIALIZED
+    ERR_UBUS_NOT_INITIALIZED,
+    ERR_GET_PORT_LIST
+
 
 } ESP_Error;
 
