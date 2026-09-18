@@ -1,5 +1,3 @@
-#include <uci.h>
-
 #include "ubus.h"
 
 static Ubus_State g_ubus;
