@@ -29,7 +29,7 @@ ESP_Error service_find_devices(void)
     }
 
     syslog(LOG_INFO, "Device(s) founded successfuly");
-    
+
     device_manager_free_devices(devices, count);
     return OK;
 }
@@ -49,9 +49,13 @@ ESP_Error service_wait_for_device_change(void)
     ESP_Error error;
     error = device_manager_wait_for_change();
 
-    if(error != OK)
+    if(error != OK){
         syslog(LOG_ERR, "Waiting for device change failed.");
-    return error;
+        return error;
+    }
+
+    syslog(LOG_INFO, "USB serial device update detected");
+    return OK;
 }
 
 ESP_Error service_get_devices(void)
