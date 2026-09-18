@@ -24,10 +24,6 @@ ESP_Error service_find_devices(void)
         return OK;
     }
 
-    for (uint32_t i = 0; i < count; i++){
-        printf("Device %u: port=%s VID=%04x PID=%04x\n", i, devices[i].port,devices[i].vid, devices[i].pid);
-    }
-
     syslog(LOG_INFO, "Device(s) founded successfuly");
 
     device_manager_free_devices(devices, count);
@@ -39,9 +35,13 @@ ESP_Error service_update_devices(void)
     ESP_Error error;
     error = device_manager_update_devices();
 
-    if(error != OK)
+    if(error != OK){
         syslog(LOG_ERR,"Device update failed.");
-    return error;
+        return error;
+    }
+
+    syslog(LOG_INFO, "Device list updated successfully");
+    return OK;
 }
 
 ESP_Error service_wait_for_device_change(void)
