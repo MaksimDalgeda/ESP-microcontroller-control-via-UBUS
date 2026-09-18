@@ -1,5 +1,5 @@
-#ifndef SERVICE_H
-#define SERVICE_H
+#ifndef DEVICE_MANAGER_SERVICE_H
+#define DEVICE_MANAGER_SERVICE_H
 
 #include <stdio.h>
 #include <syslog.h>

@@ -1,6 +1,6 @@
 #include <syslog.h>
 
-#include "service.h"
+#include "device_manager_service.h"
 #include "signal_handler.h"
 
 int main(void)

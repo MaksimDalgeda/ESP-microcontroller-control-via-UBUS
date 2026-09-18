@@ -1,4 +1,4 @@
-#include "service.h"
+#include "device_manager_service.h"
 #include "device_manager.h"
 
 ESP_Error service_init(void)
