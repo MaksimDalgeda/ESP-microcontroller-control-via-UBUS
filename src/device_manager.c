@@ -8,9 +8,14 @@
 #include <string.h>
 #include <sys/inotify.h>
 #include <libserialport.h>
+#include <pthread.h>
 
 static int inotify_fd = -1;
 static int inotify_watch = -1;
+
+static Device *devices = NULL;
+static uint32_t device_count = 0;
+static pthread_mutex_t devices_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 ESP_Error device_manager_init(void)
 {
@@ -160,6 +165,26 @@ ESP_Error device_manager_wait_for_change(void)
 
 ESP_Error device_manager_update_devices(void)
 {
+    Device *new_devices = NULL;
+    uint32_t new_count = 0;
+
+    ESP_Error error = device_manager_find_devices(&new_devices, &new_count);
+
+    if (error != OK)
+        return error;
+
+    pthread_mutex_lock(&devices_mutex);
+
+    Device *old_devices = devices;
+    uint32_t old_count = device_count;
+
+    devices = new_devices;
+    device_count = new_count;
+
+    pthread_mutex_unlock(&devices_mutex);
+
+    device_manager_free_devices(old_devices, old_count);
+
     return OK;
 }
 
