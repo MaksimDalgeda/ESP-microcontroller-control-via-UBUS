@@ -18,6 +18,9 @@ const char *error_to_string(ESP_Error err)
 
         case ERR_UBUS_NOT_INITIALIZED:
             return "ERR_UBUS_NOT_INITIALIZED";
+
+        default:
+            return "UNKNOWN_ERROR";
         
     }
 }
