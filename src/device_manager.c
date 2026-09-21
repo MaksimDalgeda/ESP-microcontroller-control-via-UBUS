@@ -113,7 +113,7 @@ ESP_Error device_manager_find_devices(Device **devices, uint32_t *count)
         if (device_list[device_index].port == NULL){
             device_manager_free_devices(device_list, device_index);
             sp_free_port_list(ports);
-            return ERROR;
+            return ERR_NULL_POINTER;
         }
 
         strcpy(device_list[device_index].port, port_name);
@@ -184,6 +184,58 @@ ESP_Error device_manager_update_devices(void)
     pthread_mutex_unlock(&devices_mutex);
 
     device_manager_free_devices(old_devices, old_count);
+
+    return OK;
+}
+ESP_Error device_manager_get_devices(Device **devices_out, uint32_t *count_out)
+{
+    if(devices_out == NULL || count_out == NULL)
+        return ERR_NULL_POINTER;
+
+    *devices_out = NULL;
+    *count_out = 0;
+
+    if (pthread_mutex_lock(&devices_mutex) != 0){
+        return PTHREAD_MUTEX_ERROR;
+    }
+
+    uint32_t count = device_count;
+
+    if (count == 0){
+        pthread_mutex_unlock(&devices_mutex);
+        return OK;
+    }
+
+    Device *copy = calloc(count, sizeof(Device));
+
+     if (copy == NULL){
+        pthread_mutex_unlock(&devices_mutex);
+        return ERR_NULL_POINTER;
+    }
+
+    for (uint32_t i = 0; i < count; i++){
+        copy[i].vid = devices[i].vid;
+        copy[i].pid = devices[i].pid;
+
+        size_t port_length = strlen(devices[i].port) + 1;
+
+        copy[i].port = malloc(port_length);
+
+        if (copy[i].port == NULL){
+            device_manager_free_devices(copy, i);
+
+            pthread_mutex_unlock(&devices_mutex);
+
+            return ERR_NULL_POINTER;
+        }
+
+        memcpy(copy[i].port, devices[i].port, port_length);
+    }
+
+    pthread_mutex_unlock(&devices_mutex);
+
+    *devices_out = copy;
+    *count_out = count;
 
     return OK;
 }

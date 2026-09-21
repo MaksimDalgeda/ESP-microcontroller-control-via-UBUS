@@ -17,7 +17,7 @@ ESP_Error device_manager_init(void);
 ESP_Error device_manager_find_devices(Device **devices, uint32_t *count);
 ESP_Error device_manager_update_devices(void);
 ESP_Error device_manager_wait_for_change(void); 
-ESP_Error device_manager_get_devices(Device **devices, uint32_t *count);
+ESP_Error device_manager_get_devices(Device **devices_out, uint32_t *count_out);
 
 void device_manager_free_devices(Device *devices, uint32_t count);
 ESP_Error device_manager_clear_data(void);
