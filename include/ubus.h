@@ -2,6 +2,8 @@
 #define UBUS_H
 
 #include <libubus.h>
+#include <libubox/uloop.h>
+#include <syslog.h>
 
 #include "error.h"
 
