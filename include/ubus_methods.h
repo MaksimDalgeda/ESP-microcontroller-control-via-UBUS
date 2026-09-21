@@ -5,6 +5,9 @@
 
 #include "error.h"
 
-ESP_Error initialize_ubus_methods(void);
+static int ubus_devices(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg);
+ESP_Error ubus_on(void);
+ESP_Error ubus_off(void);
+ESP_Error ubus_get(void);
 
 #endif
