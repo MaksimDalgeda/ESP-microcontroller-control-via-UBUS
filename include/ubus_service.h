@@ -1,6 +1,8 @@
 #ifndef UBUS_SERVICE_H
 #define UBUS_SERVICE_H
 
+#include <syslog.h>
+
 #include "error.h"
 
 ESP_Error ubus_service_init(void);
