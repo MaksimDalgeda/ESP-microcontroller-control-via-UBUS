@@ -1,6 +1,7 @@
 #include <syslog.h>
 
 #include "device_manager_service.h"
+#include "ubus_service.h"
 #include "signal_handler.h"
 
 int main(void)
@@ -12,30 +13,38 @@ int main(void)
     set_signal_action();
 
 
-    error = service_init();
+    error = device_manager_service_init();
     if(error != OK)
         goto end;
 
-    error = service_find_devices();
-
+    error = device_manager_service_find_devices();
     if(error != OK)
+        goto end;
+ 
+    error = ubus_service_init();
+    if(error != OK)
+        goto end;
+
+    error = ubus_service_start();
+    if (error != OK)
         goto end;
 
     while(!stop)
     {
-        error = service_wait_for_device_change();
+        error = device_manager_service_wait_for_device_change();
 
         if (error != OK)
             goto end;
 
-        error = service_update_devices();
+        error = device_manager_service_update_devices();
 
         if (error != OK)
             goto end;
     }
 
     end:
-    service_clear_data();
+    ubus_service_clear_data();
+    device_manager_service_clear_data();
     
     if(error == OK)
         syslog(LOG_INFO, "Application stopped without error");
