@@ -1,12 +1,12 @@
 #include "device_manager_service.h"
 #include "device_manager.h"
 
-ESP_Error service_init(void)
+ESP_Error device_manager_service_init(void)
 {
     return device_manager_init();
 }
 
-ESP_Error service_find_devices(void)
+ESP_Error device_manager_service_find_devices(void)
 {
     Device *devices = NULL;
     uint32_t count = 0;
@@ -30,7 +30,7 @@ ESP_Error service_find_devices(void)
     return OK;
 }
 
-ESP_Error service_update_devices(void)
+ESP_Error device_manager_service_update_devices(void)
 {
     ESP_Error error;
     error = device_manager_update_devices();
@@ -44,7 +44,7 @@ ESP_Error service_update_devices(void)
     return OK;
 }
 
-ESP_Error service_wait_for_device_change(void)
+ESP_Error device_manager_service_wait_for_device_change(void)
 {
     ESP_Error error;
     error = device_manager_wait_for_change();
@@ -58,12 +58,12 @@ ESP_Error service_wait_for_device_change(void)
     return OK;
 }
 
-ESP_Error service_get_devices(void)
+ESP_Error device_manager_service_get_devices(void)
 {
     return OK;
 }
 
-ESP_Error service_clear_data(void)
+ESP_Error device_manager_service_clear_data(void)
 {
     return device_manager_clear_data();
 }
