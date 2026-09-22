@@ -2,6 +2,7 @@
 #define UBUS_METHODS_H
 
 #include <libubus.h>
+#include <syslog.h>
 
 #include "error.h"
 
