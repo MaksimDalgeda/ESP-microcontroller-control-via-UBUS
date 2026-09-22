@@ -31,8 +31,6 @@ ESP_Error ubus_service_start(void)
 
     if (error != OK) syslog(LOG_ERR, "UBUS service failed to start - %s (%d)", error_to_string(error), error);
 
-    else syslog(LOG_INFO, "Ubus started successfuly");
-
     return error;
 }
 
