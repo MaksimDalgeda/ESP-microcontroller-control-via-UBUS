@@ -43,11 +43,7 @@ ESP_Error register_ubus_object(void)
         return ERR_NULL_POINTER;
     }
 
-    syslog(LOG_INFO, "Registering UBUS object: %s", object->name, object->n_methods);
-
     int result = ubus_add_object(g_ubus.ctx, object);
-    
-    syslog(LOG_INFO, "ubus_add_object result: %d", result);
 
     if(result != 0){
         syslog(LOG_ERR, "Ubus service failes to register ubus object: %s (%d)", ubus_strerror(result), result);
