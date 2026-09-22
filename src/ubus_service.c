@@ -5,6 +5,8 @@ ESP_Error ubus_service_init(void)
 {
     ESP_Error error;
 
+    syslog(LOG_INFO, "Starting ubus initialization");
+
     error = initialize_ubus();
 
     if (error != OK)
@@ -17,15 +19,19 @@ ESP_Error ubus_service_init(void)
         disconnect_ubus();
         return error;
     }
-
+    syslog(LOG_INFO, "Ubus initialized successfuly");
     return OK;
 }
 
 ESP_Error ubus_service_start(void)
-{
+{   
+    syslog(LOG_INFO, "Starting ubus service");
+
     ESP_Error error = run_ubus();
 
     if (error != OK) syslog(LOG_ERR, "UBUS service failed to start - %s (%d)", error_to_string(error), error);
+
+    else syslog(LOG_INFO, "Ubus started successfuly");
 
     return error;
 }
