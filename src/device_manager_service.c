@@ -8,25 +8,15 @@ ESP_Error device_manager_service_init(void)
 
 ESP_Error device_manager_service_find_devices(void)
 {
-    Device *devices = NULL;
-    uint32_t count = 0;
-
     syslog(LOG_INFO, "Looking for devices");
 
-    ESP_Error result = device_manager_find_devices(&devices, &count);
+    ESP_Error result = device_manager_update_devices();
 
     if (result != OK)
         return result;
 
-    if (count == 0){
-        syslog(LOG_INFO, "No devices founded");
-        device_manager_free_devices(devices, count);
-        return OK;
-    }
+    syslog(LOG_INFO, "Device(s) found successfully");
 
-    syslog(LOG_INFO, "Device(s) founded successfuly");
-
-    device_manager_free_devices(devices, count);
     return OK;
 }
 
@@ -40,7 +30,6 @@ ESP_Error device_manager_service_update_devices(void)
         return error;
     }
 
-    syslog(LOG_INFO, "Device list updated successfully");
     return OK;
 }
 
@@ -49,13 +38,12 @@ ESP_Error device_manager_service_wait_for_device_change(void)
     ESP_Error error;
     error = device_manager_wait_for_change();
 
-    if(error != OK){
+    if(error != OK && error != NO_DEVICE_UPDATE){
         syslog(LOG_ERR, "Waiting for device change failed.");
         return error;
     }
 
-    syslog(LOG_INFO, "USB serial device update detected");
-    return OK;
+    return error;
 }
 
 ESP_Error device_manager_service_get_devices(void)
