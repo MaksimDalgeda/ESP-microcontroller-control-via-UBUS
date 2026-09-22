@@ -9,6 +9,7 @@
 #include <sys/inotify.h>
 #include <libserialport.h>
 #include <pthread.h>
+#include <poll.h>
 
 static int inotify_fd = -1;
 static int inotify_watch = -1;
@@ -59,7 +60,7 @@ ESP_Error device_manager_find_devices(Device **devices, uint32_t *count)
     result = sp_list_ports(&ports);
 
     if (result != SP_OK){
-        syslog(LOG_ERR, "Unable to get available serial ports");
+        syslog(LOG_ERR, "Unable to get available serial ports- libserialport error: %d", result);
         return ERR_GET_PORT_LIST;
     }
 
@@ -139,28 +140,50 @@ ESP_Error device_manager_wait_for_change(void)
     if (inotify_fd == -1)
         return ERROR;
 
-    while (1){
-        ssize_t length = read(inotify_fd, buffer, sizeof(buffer));
+    struct pollfd poll_fd = {.fd = inotify_fd, .events = POLLIN};
 
-        if (length == -1){
-            if (errno == EINTR)
-                return OK;
+    int result = poll(&poll_fd, 1, 5000);
 
-            return ERROR;
-        }
+    if (result == -1){
+        if (errno == EINTR)
+            return NO_DEVICE_UPDATE;
 
-        size_t offset = 0;
-
-        while (offset < (size_t)length){
-            struct inotify_event *event = (struct inotify_event *)&buffer[offset];
-
-            if (event->len > 0) {
-                if (strncmp(event->name, "ttyUSB", 6) == 0 || strncmp(event->name, "ttyACM", 6) == 0)
-                    return OK;
-            }
-            offset += sizeof(struct inotify_event) + event->len;
-        }
+        return ERROR;
     }
+
+    if (result == 0)
+        return NO_DEVICE_UPDATE;
+
+    if (poll_fd.revents & (POLLERR | POLLHUP | POLLNVAL))
+        return ERROR;
+
+    ssize_t length = read(inotify_fd, buffer, sizeof(buffer));
+
+    if (length == -1){
+        if (errno == EINTR)
+            return NO_DEVICE_UPDATE;
+
+        return ERROR;
+    }
+
+    size_t offset = 0;
+
+    while (offset < (size_t)length)
+    {
+        struct inotify_event *event = (struct inotify_event *)&buffer[offset];
+
+        if (event->len > 0){
+            if (strncmp(event->name, "ttyUSB", 6) == 0 || strncmp(event->name, "ttyACM", 6) == 0){
+                syslog(LOG_INFO, "USB serial device update detected");
+
+                return OK;
+            }
+        }
+
+        offset += sizeof(struct inotify_event) + event->len;
+    }
+
+    return NO_DEVICE_UPDATE;
 }
 
 ESP_Error device_manager_update_devices(void)
@@ -181,12 +204,15 @@ ESP_Error device_manager_update_devices(void)
     devices = new_devices;
     device_count = new_count;
 
+    syslog(LOG_INFO, "Device list updated successfully");
+
     pthread_mutex_unlock(&devices_mutex);
 
     device_manager_free_devices(old_devices, old_count);
 
     return OK;
 }
+
 ESP_Error device_manager_get_devices(Device **devices_out, uint32_t *count_out)
 {
     if(devices_out == NULL || count_out == NULL)
