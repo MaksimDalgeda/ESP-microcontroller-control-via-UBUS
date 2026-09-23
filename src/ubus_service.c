@@ -24,9 +24,7 @@ ESP_Error ubus_service_init(void)
 }
 
 ESP_Error ubus_service_start(void)
-{   
-    syslog(LOG_INFO, "Starting ubus service");
-
+{ 
     ESP_Error error = run_ubus();
 
     if (error != OK) syslog(LOG_ERR, "UBUS service failed to start - %s (%d)", error_to_string(error), error);
