@@ -5,6 +5,8 @@
 #include <syslog.h>
 #include "error.h"
 
+#include "error.h"
+
 ESP_Error device_manager_service_init(void);
 
 ESP_Error device_manager_service_find_devices(void);
