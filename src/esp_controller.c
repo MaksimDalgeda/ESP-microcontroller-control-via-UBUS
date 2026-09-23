@@ -5,81 +5,165 @@
 #include <string.h>
 #include <syslog.h>
 
-ESP_Error esp_controller_on(Device *device, int pin)
+#include "config.h"
+
+static ESP_Error esp_controller_configure_port(struct sp_port *port)
+{
+    enum sp_return result;
+
+    result = sp_set_baudrate(port, ESP_BAUDRATE);
+    if (result != SP_OK)
+        return ERR_PORT;
+
+    result = sp_set_bits(port, ESP_DATA_BITS);
+    if (result != SP_OK)
+        return ERR_PORT;
+
+    result = sp_set_parity(port, SP_PARITY_NONE);
+    if (result != SP_OK)
+        return ERR_PORT;
+
+    result = sp_set_stopbits(port, ESP_STOP_BITS);
+    if (result != SP_OK)
+        return ERR_PORT;
+
+    result = sp_set_flowcontrol(port, SP_FLOWCONTROL_NONE);
+    if (result != SP_OK)
+        return ERR_PORT;
+
+    return OK;
+}
+
+static ESP_Error esp_controller_open_port(Device *device, struct sp_port **port_out)
 {
     struct sp_port *port = NULL;
     enum sp_return result;
-    char command[64];
+    ESP_Error error;
 
-    if (device == NULL || device->port == NULL)
+    if (device == NULL || device->port == NULL || port_out == NULL)
         return ERR_NULL_POINTER;
 
-    syslog(LOG_INFO, "Turning ON pin %d on device %s", pin, device->port);
+    *port_out = NULL;
 
     result = sp_get_port_by_name(device->port, &port);
 
     if (result != SP_OK) {
         syslog(LOG_ERR, "Unable to find serial port: %s", device->port);
-        return ERROR;
+        return ERR_PORT;
     }
 
     result = sp_open(port, SP_MODE_READ_WRITE);
 
     if (result != SP_OK) {
         syslog(LOG_ERR, "Unable to open serial port: %s",device->port);
+
         sp_free_port(port);
-        return ERROR;
+
+        return ERR_PORT;
     }
 
-    result = sp_set_baudrate(port, 9600);
-    if (result != SP_OK)
-        goto serial_error;
+    error = esp_controller_configure_port(port);
 
-    result = sp_set_bits(port, 8);
-    if (result != SP_OK)
-        goto serial_error;
+    if (error != OK) {
+        syslog(LOG_ERR, "Unable to configure serial port: %s", device->port);
 
-    result = sp_set_parity(port, SP_PARITY_NONE);
-    if (result != SP_OK)
-        goto serial_error;
+        sp_close(port);
+        sp_free_port(port);
 
-    result = sp_set_stopbits(port, 1);
-    if (result != SP_OK)
-        goto serial_error;
+        return error;
+    }
 
-    result = sp_set_flowcontrol(port, SP_FLOWCONTROL_NONE);
-    if (result != SP_OK)
-        goto serial_error;
+    *port_out = port;
 
-    snprintf(command, sizeof(command), "{\"action\":\"on\",\"pin\":%d}\n", pin);
+    return OK;
+}
 
-    syslog(LOG_INFO, "Sending command: %s", command);
+static void esp_controller_close_port(struct sp_port *port)
+{
+    if (port == NULL)
+        return;
 
-    int written = sp_blocking_write(port, command, strlen(command),1000);
+    sp_close(port);
+    sp_free_port(port);
+}
 
-    if (written < 0 || (size_t)written != strlen(command)) {
+static ESP_Error esp_controller_send_command(struct sp_port *port, const char *command)
+{
+    int written;
+    enum sp_return result;
+    size_t command_length;
+
+    if (port == NULL || command == NULL)
+        return ERR_NULL_POINTER;
+
+    command_length = strlen(command);
+
+    written = sp_blocking_write(port, command, command_length, ESP_SERIAL_TIMEOUT_MS);
+
+    if (written < 0 || (size_t)written != command_length) {
         syslog(LOG_ERR, "Unable to write complete command");
-        goto serial_error;
+        return ERR_PORT;
     }
 
     result = sp_drain(port);
 
-    if (result != SP_OK)
-        goto serial_error;
-
-    sp_close(port);
-    sp_free_port(port);
-
-    syslog(LOG_INFO, "ON command sent successfully");
+    if (result != SP_OK) {
+        syslog(LOG_ERR,"Unable to drain serial port");
+        return ERR_PORT;
+    }
 
     return OK;
+}
 
-    serial_error:
+ESP_Error esp_controller_on(Device *device, int pin)
+{
+    struct sp_port *port = NULL;
+    char command[ESP_COMMAND_BUFFER_SIZE];
+    ESP_Error error;
 
-    syslog(LOG_ERR, "Serial communication failed for %s", device->port);
+    if (device == NULL || device->port == NULL)
+        return ERR_NULL_POINTER;
 
-    sp_close(port);
-    sp_free_port(port);
+    syslog(LOG_INFO, "Turning ON pin %d on device %s", pin, device->port);
 
-    return ERROR;
+    error = esp_controller_open_port(device, &port);
+
+    if (error != OK)
+        return error;
+
+    snprintf(command, sizeof(command), "{\"action\":\"on\",\"pin\":%d}\n", pin);
+
+    error = esp_controller_send_command(port, command);
+
+    esp_controller_close_port(port);
+
+    if (error != OK)
+        return error;
+
+    return OK;
+}
+
+ESP_Error esp_controller_off(Device *device, int pin)
+{
+    struct sp_port *port = NULL;
+    char command[ESP_COMMAND_BUFFER_SIZE];
+    ESP_Error error;
+
+    if (device == NULL || device->port == NULL)
+        return ERR_NULL_POINTER;
+
+    syslog(LOG_INFO, "Turning OFF pin %d on device %s", pin, device->port);
+    
+    error = esp_controller_open_port(device, &port);
+
+    if (error != OK)
+        return error;
+
+    snprintf( command, sizeof(command), "{\"action\":\"off\",\"pin\":%d}\n",pin);
+
+    error = esp_controller_send_command(port, command);
+
+    esp_controller_close_port(port);
+
+    return error;
 }
