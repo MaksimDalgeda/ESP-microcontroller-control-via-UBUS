@@ -280,15 +280,27 @@ void device_manager_free_devices(Device *devices, uint32_t count)
 
 ESP_Error device_manager_clear_data(void)
 {
-    if (inotify_watch != -1){
+    if (inotify_watch != -1) {
         inotify_rm_watch(inotify_fd, inotify_watch);
         inotify_watch = -1;
     }
 
-    if (inotify_fd != -1){
+    if (inotify_fd != -1) {
         close(inotify_fd);
         inotify_fd = -1;
     }
+
+    pthread_mutex_lock(&devices_mutex);
+
+    Device *old_devices = devices;
+    uint32_t old_count = device_count;
+
+    devices = NULL;
+    device_count = 0;
+
+    pthread_mutex_unlock(&devices_mutex);
+
+    device_manager_free_devices(old_devices, old_count);
 
     return OK;
 }
