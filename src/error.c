@@ -31,6 +31,12 @@ const char *error_to_string(ESP_Error err)
         case PTHREAD_MUTEX_ERROR:
             return "PTHREAD_MUTEX_ERROR";
 
+        case ERR_PORT:
+            return "ERR_PORT";
+        
+        case ERR_DEVICE_NOT_FOUND:
+            return "ERR_DEVICE_NOT_FOUND";
+
         default:
             return "UNKNOWN_ERROR";
         
