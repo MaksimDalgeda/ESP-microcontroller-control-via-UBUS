@@ -9,8 +9,10 @@
 #define ESP_BAUDRATE               9600
 #define ESP_DATA_BITS              8
 #define ESP_STOP_BITS              1
-#define ESP_SERIAL_TIMEOUT_MS      1000
+
+#define ESP_WRITE_TIMEOUT_MS       1000
+#define ESP_READ_TIMEOUT_MS        3000
 
 #define ESP_COMMAND_BUFFER_SIZE    64
-
+#define ESP_RESPONSE_BUFFER_SIZE   256
 #endif
