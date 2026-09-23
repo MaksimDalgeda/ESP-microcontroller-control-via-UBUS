@@ -8,8 +8,8 @@
 typedef struct
 {
     char *port;
-    int vid;
-    int pid;
+    uint16_t vid;
+    uint16_t pid;
 } Device;
 
 ESP_Error device_manager_init(void);
