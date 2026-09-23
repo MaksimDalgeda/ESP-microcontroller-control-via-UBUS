@@ -1,7 +1,6 @@
 #include "esp_controller.h"
 
 #include <libserialport.h>
-#include <stdio.h>
 #include <string.h>
 #include <syslog.h>
 
@@ -98,7 +97,7 @@ static ESP_Error esp_controller_send_command(struct sp_port *port, const char *c
 
     command_length = strlen(command);
 
-    written = sp_blocking_write(port, command, command_length, ESP_SERIAL_TIMEOUT_MS);
+    written = sp_blocking_write(port, command, command_length, ESP_WRITE_TIMEOUT_MS);
 
     if (written < 0 || (size_t)written != command_length) {
         syslog(LOG_ERR, "Unable to write complete command");
@@ -162,6 +161,88 @@ ESP_Error esp_controller_off(Device *device, int pin)
     snprintf( command, sizeof(command), "{\"action\":\"off\",\"pin\":%d}\n",pin);
 
     error = esp_controller_send_command(port, command);
+
+    esp_controller_close_port(port);
+
+    return error;
+}
+
+static ESP_Error esp_controller_read_response(struct sp_port *port, char *response, size_t response_size)
+{
+    if (port == NULL || response == NULL || response_size == 0)
+        return ERR_NULL_POINTER;
+
+    size_t position = 0;
+
+    while (position < response_size - 1) {
+        char character;
+
+        enum sp_return result = sp_blocking_read_next(port, &character, 1, ESP_READ_TIMEOUT_MS);
+
+        if (result < 0) {
+            syslog(LOG_ERR, "Unable to read from serial port");
+            return ERR_PORT;
+        }
+
+        if (result == 0) {
+            syslog(LOG_ERR, "Serial read timeout");
+            return ERR_PORT;
+        }
+
+        if (character == '\n')
+            break;
+
+        if (character == '\r')
+            continue;
+
+        response[position++] = character;
+    }
+
+    response[position] = '\0';
+
+    if (position == response_size - 1) {
+        syslog(LOG_ERR, "ESP response is too long");
+        return ERR_PORT;
+    }
+
+    syslog(LOG_INFO, "Received response: %s", response);
+
+    return OK;
+}
+
+ESP_Error esp_controller_get(Device *device, int pin, const char *model, const char *sensor, char *response, size_t response_size)
+{
+    struct sp_port *port = NULL;
+    char command[ESP_COMMAND_BUFFER_SIZE];
+    ESP_Error error;
+
+    if (device == NULL ||
+        device->port == NULL ||
+        model == NULL ||
+        sensor == NULL ||
+        response == NULL ||
+        response_size == 0)
+        return ERR_NULL_POINTER;
+
+    syslog(LOG_INFO, "Getting sensor data from %s, sensor=%s, model=%s, pin=%d", device->port, sensor, model, pin);
+
+    error = esp_controller_open_port(device, &port);
+
+    if (error != OK)
+        return error;
+
+    snprintf(command, sizeof(command),
+        "{\"action\":\"get\",\"sensor\":\"%s\",\"pin\":%d,\"model\":\"%s\"}\n",
+        sensor, pin, model);
+
+    error = esp_controller_send_command(port, command);
+
+    if (error != OK) {
+        esp_controller_close_port(port);
+        return error;
+    }
+
+    error = esp_controller_read_response(port, response, response_size);
 
     esp_controller_close_port(port);
 
