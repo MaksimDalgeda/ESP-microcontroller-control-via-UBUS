@@ -67,6 +67,28 @@ static int ubus_devices(struct ubus_context *ctx, struct ubus_object *obj, struc
     return UBUS_STATUS_OK;
 }
 
+static int ubus_send_error(struct ubus_context *ctx, struct ubus_request_data *req, ESP_Error error)
+{
+    struct blob_buf buf = {0};
+
+    if (blob_buf_init(&buf, 0) != 0)
+        return UBUS_STATUS_UNKNOWN_ERROR;
+
+    void *error_table = blobmsg_open_table(&buf, "error");
+
+    blobmsg_add_u32(&buf, "code", (uint32_t)error);
+
+    blobmsg_add_string(&buf, "message", error_to_string(error));
+
+    blobmsg_close_table(&buf, error_table);
+
+    ubus_send_reply(ctx, req, buf.head);
+
+    blob_buf_free(&buf);
+
+    return UBUS_STATUS_OK;
+}
+
 static ESP_Error ubus_find_device(const char *port_name, Device **device, Device **devices,uint32_t *count)
 {
     if (port_name == NULL ||
@@ -116,12 +138,15 @@ static int ubus_on(struct ubus_context *ctx, struct ubus_object *obj,struct ubus
 
     if (error == ERR_DEVICE_NOT_FOUND) {
         syslog(LOG_ERR, "Device not found: %s", port);
-        return UBUS_STATUS_NOT_FOUND;
+        return ubus_send_error(ctx, req, error);
     }
 
     if (error != OK) {
         syslog(LOG_ERR,"Unable to find device: %s (%d)", error_to_string(error), error);
-        return UBUS_STATUS_UNKNOWN_ERROR;
+
+        device_manager_free_devices(devices, count);
+
+        return ubus_send_error(ctx, req, error);
     }
 
     error = esp_controller_on(device, pin);
@@ -131,7 +156,7 @@ static int ubus_on(struct ubus_context *ctx, struct ubus_object *obj,struct ubus
     if (error != OK) {
         syslog(LOG_ERR,"Failed to turn ON pin %d on %s: %s (%d)",pin, port, error_to_string(error), error);
 
-        return UBUS_STATUS_UNKNOWN_ERROR;
+        return ubus_send_error(ctx, req, error);
     }
 
     return UBUS_STATUS_OK;
@@ -162,7 +187,7 @@ static int ubus_off(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 
         device_manager_free_devices(devices, count);
 
-        return UBUS_STATUS_NOT_FOUND;
+        return ubus_send_error(ctx, req, error);
     }
 
     if (error != OK) {
@@ -170,7 +195,7 @@ static int ubus_off(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 
         device_manager_free_devices(devices, count);
 
-        return UBUS_STATUS_UNKNOWN_ERROR;
+        return ubus_send_error(ctx, req, error);
     }
 
     error = esp_controller_off(device, pin);
@@ -180,7 +205,7 @@ static int ubus_off(struct ubus_context *ctx, struct ubus_object *obj, struct ub
     if (error != OK) {
         syslog(LOG_ERR, "Failed to turn OFF pin %d on %s: %s (%d)",pin, port, error_to_string(error), error);
 
-        return UBUS_STATUS_UNKNOWN_ERROR;
+        return ubus_send_error(ctx, req, error);
     }
 
     return UBUS_STATUS_OK;
@@ -245,7 +270,7 @@ static int ubus_get(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 
         device_manager_free_devices(devices, count);
 
-        return UBUS_STATUS_NOT_FOUND;
+        return ubus_send_error(ctx, req, error);
     }
 
     if (error != OK) {
@@ -253,7 +278,7 @@ static int ubus_get(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 
         device_manager_free_devices(devices, count);
 
-        return UBUS_STATUS_UNKNOWN_ERROR;
+        return ubus_send_error(ctx, req, error);
     }
 
     char response[ESP_RESPONSE_BUFFER_SIZE] = {0};
@@ -265,7 +290,7 @@ static int ubus_get(struct ubus_context *ctx, struct ubus_object *obj, struct ub
     if (error != OK) {
         syslog(LOG_ERR, "Failed to get sensor data from %s: %s (%d)", port, error_to_string(error), error);
 
-        return UBUS_STATUS_UNKNOWN_ERROR;
+        return ubus_send_error(ctx, req, error);
     }
 
     struct blob_buf buf = {0};
