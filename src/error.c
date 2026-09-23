@@ -37,6 +37,9 @@ const char *error_to_string(ESP_Error err)
         case ERR_DEVICE_NOT_FOUND:
             return "ERR_DEVICE_NOT_FOUND";
 
+        case ERR_UNSUPPORTED_DEVICE:
+            return "ERR_UNSUPPORTED_DEVICE";
+            
         default:
             return "UNKNOWN_ERROR";
         
