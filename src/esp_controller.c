@@ -33,6 +33,21 @@ static ESP_Error esp_controller_configure_port(struct sp_port *port)
     return OK;
 }
 
+static ESP_Error esp_controller_validate_device(const Device *device)
+{
+    if (device == NULL)
+        return ERR_NULL_POINTER;
+
+    if (device->vid != ESP_VENDOR_ID || device->pid != ESP_PRODUCT_ID) {
+
+        syslog(LOG_WARNING, "Unsupported device: %s VID=0x%04X PID=0x%04X", device->port, (unsigned int)device->vid, (unsigned int)device->pid);
+
+        return ERR_UNSUPPORTED_DEVICE;
+    }
+
+    return OK;
+}
+
 static ESP_Error esp_controller_open_port(Device *device, struct sp_port **port_out)
 {
     struct sp_port *port = NULL;
@@ -43,6 +58,10 @@ static ESP_Error esp_controller_open_port(Device *device, struct sp_port **port_
         return ERR_NULL_POINTER;
 
     *port_out = NULL;
+
+    error = esp_controller_validate_device(device);
+    if (error != OK)
+        return error;
 
     result = sp_get_port_by_name(device->port, &port);
 
