@@ -119,8 +119,8 @@ ESP_Error device_manager_find_devices(Device **devices, uint32_t *count)
 
         strcpy(device_list[device_index].port, port_name);
 
-        device_list[device_index].vid = vid;
-        device_list[device_index].pid = pid;
+        device_list[device_index].vid = (uint16_t)vid;
+        device_list[device_index].pid = (uint16_t)pid;
 
         device_index++;
     }
