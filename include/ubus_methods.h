@@ -8,8 +8,4 @@
 
 struct ubus_object *ubus_methods_get_object(void);
 
-ESP_Error ubus_on(void);
-ESP_Error ubus_off(void);
-ESP_Error ubus_get(void);
-
 #endif
