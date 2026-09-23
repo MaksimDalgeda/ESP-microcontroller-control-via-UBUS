@@ -162,7 +162,7 @@ ESP_Error esp_controller_on(Device *device, int pin)
 
     if (device == NULL || device->port == NULL)
         return ERR_NULL_POINTER;
-
+    
     error = esp_controller_validate_pin(pin);
     if (error != OK)
         return error;
