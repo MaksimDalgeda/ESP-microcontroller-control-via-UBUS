@@ -48,6 +48,27 @@ static ESP_Error esp_controller_validate_device(const Device *device)
     return OK;
 }
 
+static ESP_Error esp_controller_validate_pin(int pin)
+{
+    switch (pin) {
+        case ESP_PIN_D0:
+        case ESP_PIN_D1:
+        case ESP_PIN_D2:
+        case ESP_PIN_D3:
+        case ESP_PIN_D4:
+        case ESP_PIN_D5:
+        case ESP_PIN_D6:
+        case ESP_PIN_D7:
+        case ESP_PIN_D8:
+            return OK;
+
+        default:
+            syslog(LOG_WARNING, "Unsupported ESP pin: %d", pin);
+
+            return ERR_INVALID_PIN;
+    }
+}
+
 static ESP_Error esp_controller_open_port(Device *device, struct sp_port **port_out)
 {
     struct sp_port *port = NULL;
@@ -142,6 +163,10 @@ ESP_Error esp_controller_on(Device *device, int pin)
     if (device == NULL || device->port == NULL)
         return ERR_NULL_POINTER;
 
+    error = esp_controller_validate_pin(pin);
+    if (error != OK)
+        return error;
+        
     syslog(LOG_INFO, "Turning ON pin %d on device %s", pin, device->port);
 
     error = esp_controller_open_port(device, &port);
@@ -169,6 +194,10 @@ ESP_Error esp_controller_off(Device *device, int pin)
 
     if (device == NULL || device->port == NULL)
         return ERR_NULL_POINTER;
+    
+    error = esp_controller_validate_pin(pin);
+    if (error != OK)
+        return error;
 
     syslog(LOG_INFO, "Turning OFF pin %d on device %s", pin, device->port);
     
@@ -242,6 +271,10 @@ ESP_Error esp_controller_get(Device *device, int pin, const char *model, const c
         response == NULL ||
         response_size == 0)
         return ERR_NULL_POINTER;
+
+    error = esp_controller_validate_pin(pin);
+    if (error != OK)
+        return error;
 
     syslog(LOG_INFO, "Getting sensor data from %s, sensor=%s, model=%s, pin=%d", device->port, sensor, model, pin);
 
