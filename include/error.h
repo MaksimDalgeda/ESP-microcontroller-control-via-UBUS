@@ -15,6 +15,7 @@ typedef enum
     ERR_PORT,
     ERR_DEVICE_NOT_FOUND,
     ERR_UNSUPPORTED_DEVICE,
+    ERR_INVALID_PIN
 
 } ESP_Error;
 

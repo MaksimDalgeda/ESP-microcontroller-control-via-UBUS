@@ -39,7 +39,10 @@ const char *error_to_string(ESP_Error err)
 
         case ERR_UNSUPPORTED_DEVICE:
             return "ERR_UNSUPPORTED_DEVICE";
-            
+        
+        case ERR_INVALID_PIN:
+            return "ERR_INVALID_PIN";
+
         default:
             return "UNKNOWN_ERROR";
         
