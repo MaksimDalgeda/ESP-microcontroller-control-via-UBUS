@@ -76,7 +76,7 @@ static void *ubus_thread_function(void *arg)
         }
 
         error = ubus_service_start();
-
+        
         ubus_service_clear_data();
 
         if (stop)
