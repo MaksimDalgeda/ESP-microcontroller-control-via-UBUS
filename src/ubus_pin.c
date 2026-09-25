@@ -8,6 +8,7 @@
 #include "error.h"
 #include "esp_controller.h"
 #include "ubus_common.h"
+#include "config.h"
 
 enum {
     PIN_PORT,
@@ -59,10 +60,12 @@ static int ubus_handle_pin(struct ubus_context *ctx, struct ubus_request_data *r
         return ubus_send_error(ctx, req, error);
     }
 
+    char response[ESP_RESPONSE_BUFFER_SIZE];
+
     if (turn_on) 
-        error = esp_controller_on(device, pin);
+        error = esp_controller_on(device, pin, response, sizeof(response));
     else 
-        error = esp_controller_off(device, pin);
+        error = esp_controller_off(device, pin, response, sizeof(response));
     
 
     device_manager_free_devices(devices, count);
@@ -71,6 +74,25 @@ static int ubus_handle_pin(struct ubus_context *ctx, struct ubus_request_data *r
         syslog(LOG_ERR,"Failed to turn %s pin %d on %s: %s (%d)", turn_on ? "ON" : "OFF", pin, port, error_to_string(error), error);
         return ubus_send_error(ctx, req, error);
     }
+
+    struct blob_buf buf = {0};
+
+    if (blob_buf_init(&buf, 0) != 0) {
+        syslog(LOG_ERR, "Unable to initialize blob buffer");
+        return UBUS_STATUS_UNKNOWN_ERROR;
+    }
+
+    if (!blobmsg_add_json_from_string(&buf, response)) {
+        syslog(LOG_ERR, "Invalid JSON response from ESP: %s", response);
+
+        blob_buf_free(&buf);
+
+        return UBUS_STATUS_UNKNOWN_ERROR;
+    }
+
+    ubus_send_reply(ctx, req, buf.head);
+
+    blob_buf_free(&buf);
 
     return UBUS_STATUS_OK;
 }
