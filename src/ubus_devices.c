@@ -30,7 +30,7 @@ int ubus_devices(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_
         return UBUS_STATUS_UNKNOWN_ERROR;
     }
 
-    void *array = blobmsg_open_array(&buf, NULL);
+    void *array = blobmsg_open_array(&buf, "devices");
 
     for (uint32_t i = 0; i < count; i++) {
         void *table = blobmsg_open_table(&buf, NULL);
