@@ -1,4 +1,5 @@
 #include "device_manager.h"
+#include "config.h"
 
 #include <syslog.h>
 #include <stdio.h>
@@ -102,7 +103,6 @@ ESP_Error device_manager_find_devices(Device **devices, uint32_t *count)
 
         if (result != SP_OK)
             continue;
-        
 
         const char *port_name = sp_get_port_name(ports[i]);
 
@@ -135,14 +135,14 @@ ESP_Error device_manager_find_devices(Device **devices, uint32_t *count)
 
 ESP_Error device_manager_wait_for_change(void)
 {
-    char buffer[4096];
+    char buffer[DEVICE_CHANGE_BUFFER_SIZE];
 
     if (inotify_fd == -1)
         return ERROR;
 
     struct pollfd poll_fd = {.fd = inotify_fd, .events = POLLIN};
 
-    int result = poll(&poll_fd, 1, 5000);
+    int result = poll(&poll_fd, 1, DEVICE_CHANGE_TIMEOUT_MS);
 
     if (result == -1){
         if (errno == EINTR)
