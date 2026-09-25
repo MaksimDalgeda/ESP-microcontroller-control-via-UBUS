@@ -2,30 +2,16 @@
 
 CC ?= gcc
 
-CFLAGS ?= \
-	-Wall \
-	-Wextra \
-	-g \
-	-std=c11 \
-	-D_POSIX_C_SOURCE=200809L \
+CFLAGS ?= -Wall -Wextra -g -std=c11 -D_POSIX_C_SOURCE=200809L
 
 CPPFLAGS := \
-	-I. \
-	-Icommon/include \
-	-Idevices/include \
-	-Iesp/include \
-	-Iubus/include
+	-Iinclude
 
-SRC := \
-	main.c \
-	$(wildcard common/src/*.c) \
-	$(wildcard devices/src/*.c) \
-	$(wildcard esp/src/*.c) \
-	$(wildcard ubus/src/*.c)
+SRC := $(wildcard src/*.c)
 
-OBJ := $(patsubst %.c,build/%.o,$(SRC))
+OBJ := $(patsubst src/%.c,build/%.o,$(SRC))
 
-TARGET := build/esp-ubus
+TARGET := build/esp-controller
 
 LDLIBS := \
 	-lubus \
@@ -36,13 +22,15 @@ LDLIBS := \
 
 all: $(TARGET)
 
-build/%.o: %.c
+build/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJ)
 	@mkdir -p $(dir $@)
-	$(CC) $(OBJ) -o $@ $(LDLIBS)
+	$(CC) $(OBJ) \
+		$(LDLIBS) \
+		-o $@
 
 run: all
 	./$(TARGET)
