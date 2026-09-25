@@ -1,10 +1,7 @@
 #include "ubus_methods.h"
 
 #include <libubus.h>
-
-#include "ubus_devices.h"
-#include "ubus_pin.h"
-#include "ubus_sensor.h"
+#include "ubus_controlls.h"
 
 static const struct ubus_method esp_methods[] = {
     UBUS_METHOD_NOARG("devices", ubus_devices),
