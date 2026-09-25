@@ -45,24 +45,17 @@ ESP_Error esp_serial_open(const Device *device, struct sp_port **port_out)
 
     *port_out = NULL;
 
-    if (device->vid != ESP_VENDOR_ID || device->pid != ESP_PRODUCT_ID) {
-
-        syslog(LOG_WARNING, "Unsupported device: %s VID=0x%04X PID=0x%04X", device->port, (unsigned int)device->vid, (unsigned int)device->pid);
-
+    if (device->vid != ESP_VENDOR_ID || device->pid != ESP_PRODUCT_ID)
         return ERR_UNSUPPORTED_DEVICE;
-    }
 
     result = sp_get_port_by_name(device->port, &port);
 
-    if (result != SP_OK) {
-        syslog(LOG_ERR, "Unable to find serial port: %s", device->port);
+    if (result != SP_OK)
         return ERR_PORT;
-    }
 
     result = sp_open(port, SP_MODE_READ_WRITE);
 
     if (result != SP_OK) {
-        syslog(LOG_ERR, "Unable to open serial port: %s", device->port);
         sp_free_port(port);
         return ERR_PORT;
     }
@@ -70,8 +63,6 @@ ESP_Error esp_serial_open(const Device *device, struct sp_port **port_out)
     error = esp_serial_configure_port(port);
 
     if (error != OK) {
-        syslog(LOG_ERR, "Unable to configure serial port: %s", device->port);
-
         sp_close(port);
         sp_free_port(port);
 
@@ -105,17 +96,13 @@ ESP_Error esp_serial_send(struct sp_port *port,const char *command)
 
     written = sp_blocking_write(port, command, command_length, ESP_WRITE_TIMEOUT_MS);
 
-    if (written < 0 || (size_t)written != command_length) {
-        syslog(LOG_ERR, "Unable to write complete command");
+    if (written < 0 || (size_t)written != command_length)
         return ERR_PORT;
-    }
 
     result = sp_drain(port);
 
-    if (result != SP_OK) {
-        syslog(LOG_ERR, "Unable to drain serial port");
+    if (result != SP_OK)
         return ERR_PORT;
-    }
 
     return OK;
 }
@@ -133,15 +120,8 @@ ESP_Error esp_serial_read_line(struct sp_port *port, char *response, size_t resp
 
         enum sp_return result = sp_blocking_read_next(port, &character, 1, ESP_READ_TIMEOUT_MS);
 
-        if (result < 0) {
-            syslog(LOG_ERR, "Unable to read from serial port");
+        if (result <= 0)
             return ERR_PORT;
-        }
-
-        if (result == 0) {
-            syslog(LOG_ERR, "Serial read timeout");
-            return ERR_PORT;
-        }
 
         if (character == '\n')
             break;
@@ -154,12 +134,8 @@ ESP_Error esp_serial_read_line(struct sp_port *port, char *response, size_t resp
 
     response[position] = '\0';
 
-    if (position == response_size - 1) {
-        syslog(LOG_ERR, "ESP response is too long");
+    if (position == response_size - 1)
         return ERR_PORT;
-    }
-
-    syslog(LOG_INFO, "Received response: %s", response);
 
     return OK;
 }
