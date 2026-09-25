@@ -60,9 +60,17 @@ ESP_Error device_manager_find_devices(Device **devices, uint32_t *count)
 
     result = sp_list_ports(&ports);
 
-    if (result != SP_OK){
-        syslog(LOG_ERR, "Unable to get available serial ports- libserialport error: %d", result);
-        return ERR_GET_PORT_LIST;
+    if (result != SP_OK) {
+        syslog(LOG_WARNING, "Unable to get available serial ports, retrying - libserialport error: %d", result);
+
+        usleep(100000);
+
+        result = sp_list_ports(&ports);
+
+        if (result != SP_OK) {
+            syslog(LOG_ERR, "Unable to get available serial ports after retry - libserialport error: %d", result);
+            return ERR_GET_PORT_LIST;
+        }
     }
 
     uint32_t device_count = 0;
