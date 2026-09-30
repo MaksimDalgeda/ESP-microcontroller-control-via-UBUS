@@ -116,7 +116,11 @@ ESP_Error esp_controller_get(Device *device, int pin, const char *model, const c
     }
 
     error = esp_serial_read_line(port, response, response_size);
-
+    
+    if(error != OK)
+        syslog(LOG_ERR, "Unable to read response");
+    else 
+        syslog(LOG_INFO, "Received response: %s", response);
     esp_serial_close(port);
 
     return error;
