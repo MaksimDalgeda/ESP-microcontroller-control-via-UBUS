@@ -1,6 +1,7 @@
 #include "ubus_controlls.h"
 
 #include <libubox/blobmsg.h>
+#include <libubox/blobmsg_json.h>
 #include <stdbool.h>
 #include <syslog.h>
 
